@@ -1,0 +1,25 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.NetPeek" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your dark theme here. -->
+        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+
+        <!-- MAP YOUR NEW COLOR TOKENS HERE -->
+        <item name="colorPrimary">@color/netpeek_primary</item>
+        <item name="colorSecondary">@color/netpeek_secondary</item>
+        <item name="android:windowBackground">@color/netpeek_background</item>
+        <item name="colorSurface">@color/netpeek_surface</item>
+
+        <!-- Text colors that sit on top of primary elements (like toolbar text) -->
+        <item name="colorOnPrimary">@android:color/white</item>
+
+    </style>
+
+    <style name="Theme.NetPeek" parent="Base.Theme.NetPeek" />
+
+    <!-- ADD THIS STYLE BLOCK RIGHT HERE -->
+    <style name="Theme.NetPeek.TitleBold" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- YOUR NEW CUSTOM COLORS -->
+    <color name="netpeek_primary">#9070C8</color>      <!-- Dark Teal for Toolbar/Primary Buttons -->
+    <color name="netpeek_secondary">#4B0082</color>    <!-- Indigo Accent color -->
+    <color name="netpeek_background">#F8F9FA</color>   <!-- Light grey background -->
+    <color name="netpeek_surface">#FFFFFF</color>      <!-- White for cards and fields -->
+</resources>

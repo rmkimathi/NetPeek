@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NetPeek – About</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 700px;
+            margin: 0 auto;
+            color: #1a1a1a;
+            background: #fafafa;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                color: #e8e8e8;
+                background: #121212;
+            }
+            h1, h2 { color: #ffffff; }
+            code, .card {
+                background: #1e1e1e;
+                border-color: #333;
+            }
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.2em;
+        }
+        h2 {
+            font-size: 1.25rem;
+            margin-top: 1.8em;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        ul { padding-left: 1.2em; }
+        .footer {
+            margin-top: 3em;
+            font-size: 0.85em;
+            opacity: 0.7;
+            text-align: left;
+        }
+        
+        table {
+           font-family: arial, sans-serif;
+           border-collapse: collapse;
+           width: 100%;
+        }
+        
+        td, th {
+           border: 1px solid #dddddd;
+           text-align: left;
+           padding: 8px;
+        }
+        
+    </style>
+</head>
+<body>
+
+<h1>NetPeek</h1>
+
+<div class="card">
+    <strong>Version</strong> 1.0<br>
+    Modern Android network scanner written in Kotlin.
+</div>
+
+<p><i>Discover devices on your local network.</i></p>
+
+<h2>Features</h2>
+<ul>
+    <li>Auto-detects your local IP range (CIDR)</li>
+    <li>Fast concurrent host discovery</li>
+    <li>Port scanning of common services</li>
+    <li>Service identification (HTTP, SSH, RTSP, SMB, UDP-Lite, Plex, Home Assistant etc.)</li>
+    <li>mDNS / Bonjour name discovery</li>
+    <li>SSDP / UPnP friendly name discovery</li>
+    <li>Best-effort manufacturer detection</li>
+</ul>
+
+<h2>How it works</h2>
+<p>
+    NetPeek first detects the subnet you are connected to, then probes each IP address
+    using TCP connections on common ports. It also listens for mDNS and SSDP advertisements
+    to learn device names that do not appear in classic DNS.
+</p>
+
+<h2>Detected services (examples)</h2>
+
+<table>
+  <tr>
+    <th>Port</th>
+    <th>Service</th>
+  </tr>
+  <tr>
+    <td>80, 443</td>
+    <td>HTTP, HTTPS</td>
+  </tr>
+  <tr>
+    <td>22</td>
+    <td>SSH</td>
+  </tr>
+  <tr>
+    <td>445</td>
+    <td>SMB (Samba)</td>
+  </tr>
+  <tr>
+    <td>554, 8554</td>
+    <td>RTSP (cameras)</td>
+  </tr>
+  <tr>
+    <td>9000</td>
+    <td>UDP-Lite (IP CCTV API)</td>
+  </tr>
+  <tr>
+    <td>8123</td>
+    <td>Home Assistant</td>
+  </tr>
+  <tr>
+    <td>32400</td>
+    <td>Plex</td>
+  </tr>
+  <tr>
+    <td>53</td>
+    <td>DNS</td>
+  </tr>
+  <tr>
+    <td>1883</td>
+    <td>MQTT</td>
+  </tr>
+</table>
+
+
+
+<h2>Limitations</h2>
+<ul>
+    <li>MAC address lookup is restricted on modern Android (privacy)</li>
+    <li>Some devices do not respond to probes or mDNS</li>
+    <li>Very large subnets are limited for performance</li>
+    <li>No root / no raw packets – pure TCP + discovery protocols</li>
+</ul>
+
+<h2>Privacy</h2>
+<p>
+    All scanning is performed locally on your device.
+    No data is sent to any external server.
+</p>
+
+<div class="footer">
+    &copy; 2026 NetPeek
+</div>
+
+</body>
+</html>
