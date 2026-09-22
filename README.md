@@ -20,7 +20,7 @@ NetPeek first detects the subnet you are connected to, then probes each IP addre
 
 ## Detected services (examples)
 |Port|Service|
-|-----|-----|
+|:---|:------|
 |80, 443|HTTP, HTTPS|
 |22|SSH|
 |445|SMB (Samba)|
