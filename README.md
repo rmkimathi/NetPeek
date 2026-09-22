@@ -19,16 +19,17 @@ Discover devices on your local network.
 NetPeek first detects the subnet you are connected to, then probes each IP address using TCP connections on common ports. It also listens for mDNS and SSDP advertisements to learn device names that do not appear in classic DNS.
 
 ## Detected services (examples)
-Port 	Service
-80, 443 	HTTP, HTTPS
-22 	SSH
-445 	SMB (Samba)
-554, 8554 	RTSP (cameras)
-9000 	UDP-Lite (IP CCTV API)
-8123 	Home Assistant
-32400 	Plex
-53 	DNS
-1883 	MQTT
+|Port|Service|
+|-----|-----|
+|80, 443|HTTP, HTTPS|
+|22|SSH|
+|445|SMB (Samba)|
+|554, 8554|RTSP (cameras)|
+|9000|UDP-Lite (IP CCTV API)|
+|8123|Home Assistant|
+|32400|Plex|
+|53|DNS|
+|1883|MQTT|
 
 ## Limitations
 
