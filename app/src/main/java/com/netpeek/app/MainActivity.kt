@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerDevices.adapter = adapter
 
         binding.btnScan.setOnClickListener {
+            // Force allow a new scan
+            viewModel.forceStopScan()   // see below
             viewModel.startScan()
         }
 
@@ -75,6 +77,14 @@ class MainActivity : AppCompatActivity() {
                     binding.progressBar.max = total
                     binding.progressBar.progress = current
                     binding.progressText.text = "Scanned $current / $total hosts"
+
+                    // Safety net – force UI reset when scan is done
+                    if (current >= total) {
+                        binding.btnScan.isEnabled = true
+                        binding.btnScan.text = "Scan Network"
+                        binding.progressBar.visibility = View.GONE
+                        binding.progressText.visibility = View.GONE
+                    }
                 }
             }
         }

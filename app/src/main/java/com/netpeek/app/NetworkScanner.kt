@@ -24,7 +24,8 @@ class NetworkScanner(private val context: Context) {
         995 to "POP3S", 1883 to "MQTT", 3306 to "MySQL", 3389 to "RDP", 5000 to "UPnP/Flask",
         5432 to "PostgreSQL", 5900 to "VNC", 8000 to "HTTP-Alt2", 8080 to "HTTP-Alt",
         8123 to "Home Assistant", 8443 to "HTTPS-Alt", 8554 to "RTSP-Alt", 9000 to "UDP-Lite",
-        9090 to "Cockpit", 32400 to "Plex", 49152 to "UPnP"
+        9090 to "Cockpit", 32400 to "Plex", 49152 to "UPnP", 135 to "Microsoft RPC", 5357 to "wsdapi",
+        10000 to "webmin", 6668 to "irc", 8008 to "http-alt", 8009 to "ajp13", 52673 to "filtered"
     )
 
     // Cache of mDNS names discovered during scan
@@ -68,7 +69,6 @@ class NetworkScanner(private val context: Context) {
         onDeviceFound: (DeviceInfo) -> Unit = {}
     ): List<DeviceInfo> = withContext(Dispatchers.IO) {
 
-        // Start background discoveries
         val mdnsJob = launch { discoverMdns() }
         val ssdpJob = launch { discoverSsdp() }
 
@@ -78,30 +78,53 @@ class NetworkScanner(private val context: Context) {
 
         val results = ConcurrentHashMap<String, DeviceInfo>()
         val jobs = mutableListOf<Job>()
-        var scanned = 0
+        val scanned = java.util.concurrent.atomic.AtomicInteger(0)   // thread-safe
 
+        // -------- Main scan --------
         for (i in 1..maxHosts) {
             val ip = incrementIp(baseIp, i)
             val job = launch {
+                try {
+                    val device = probeHost(ip)
+                    if (device != null) {
+                        results[ip] = device
+                        withContext(Dispatchers.Main) { onDeviceFound(device) }
+                    }
+                } finally {
+                    val current = scanned.incrementAndGet()
+                    withContext(Dispatchers.Main) { onProgress(current, maxHosts) }
+                }
+            }
+            jobs.add(job)
+
+            if (i % 16 == 0) delay(80)
+        }
+
+        jobs.joinAll()   // wait for every host
+
+        // -------- Second gentle pass (missed devices only) --------
+        val foundIps = results.keys.toSet()
+        val missingIps = (1..maxHosts)
+            .map { incrementIp(baseIp, it) }
+            .filter { it !in foundIps }
+
+        for (ip in missingIps) {
+            try {
                 val device = probeHost(ip)
                 if (device != null) {
                     results[ip] = device
                     withContext(Dispatchers.Main) { onDeviceFound(device) }
                 }
-                scanned++
-                withContext(Dispatchers.Main) { onProgress(scanned, maxHosts) }
-            }
-            jobs.add(job)
-            if (i % 32 == 0) delay(40)
+            } catch (_: Exception) { }
+            delay(25)
         }
 
-        jobs.joinAll()
-
-        // Stop discoveries
+        // -------- Stop discoveries (do NOT wait forever) --------
         mdnsJob.cancel()
         ssdpJob.cancel()
+        // Do not call join() – it can hang on NsdManager / Main dispatcher
 
-        // Enrich with mDNS + UPnP names
+        // Enrich with whatever we already have
         results.forEach { (ip, device) ->
             var updated = device
             mdnsCache[ip]?.let {
@@ -113,7 +136,12 @@ class NetworkScanner(private val context: Context) {
             results[ip] = updated
         }
 
-        // This last line is the return value
+        // Guarantee 100% progress
+        withContext(Dispatchers.Main) {
+            onProgress(maxHosts, maxHosts)
+        }
+
+        // This must be the last expression
         results.values.sortedBy { ipToLong(it.ip) }
     }
 
@@ -122,16 +150,17 @@ class NetworkScanner(private val context: Context) {
 
         // Hostname
         val hostname = try {
-            InetAddress.getByName(ip).canonicalHostName.takeIf { it != ip } ?: "Unknown"
+            InetAddress.getByName(ip).canonicalHostName
+                .takeIf { it != ip } ?: "Unknown"
         } catch (e: Exception) {
             "Unknown"
         }
 
-        // MAC + Manufacturer (best effort)
+        // MAC + Manufacturer (best effort – often blocked on modern Android)
         val mac = getMacAddress(ip)
         val manufacturer = OuiLookup.getManufacturer(mac)
 
-        // Names from discovery
+        // Names discovered by mDNS / SSDP
         val mdnsName = mdnsCache[ip]
         val upnpName = upnpCache[ip]
 
@@ -140,10 +169,14 @@ class NetworkScanner(private val context: Context) {
         val services = mutableListOf<String>()
 
         for ((port, serviceName) in COMMON_PORTS) {
-            if (isPortOpen(ip, port, timeoutMs = 320)) {
+            if (isPortOpen(ip, port, timeoutMs = 450)) {
                 openPorts.add(port)
                 val banner = grabBanner(ip, port)
-                val detected = if (banner.isNotBlank()) "$serviceName ($banner)" else serviceName
+                val detected = if (banner.isNotBlank()) {
+                    "$serviceName ($banner)"
+                } else {
+                    serviceName
+                }
                 services.add(detected)
             }
         }
@@ -241,13 +274,25 @@ class NetworkScanner(private val context: Context) {
 
     // ---------- helpers (unchanged logic) ----------
     private fun isHostAlive(ip: String): Boolean {
-        val quickPorts = listOf(80, 443, 22, 445, 135, 139, 8080, 554, 9000)
-        for (p in quickPorts) {
-            if (isPortOpen(ip, p, 180)) return true
+        // Wider set of ports + longer timeout
+        val quickPorts = listOf(
+            22, 53, 80, 443, 21, 135, 139,
+            445, 554, 5357, 10000, 9000, 6668, 8080,
+            8000, 5000, 1883, 8008, 8009, 8123, 8443, 52673
+        )
+
+        for (port in quickPorts) {
+            if (isPortOpen(ip, port, timeoutMs = 450)) {
+                return true
+            }
         }
+
+        // Fallback
         return try {
-            InetAddress.getByName(ip).isReachable(500)
-        } catch (e: Exception) { false }
+            InetAddress.getByName(ip).isReachable(800)
+        } catch (e: Exception) {
+            false
+        }
     }
 
 private suspend fun discoverSsdp() = withContext(Dispatchers.IO) {
@@ -307,13 +352,15 @@ private suspend fun discoverSsdp() = withContext(Dispatchers.IO) {
     }
 }
 
-    private fun isPortOpen(ip: String, port: Int, timeoutMs: Int): Boolean {
+    private fun isPortOpen(ip: String, port: Int, timeoutMs: Int = 450): Boolean {
         return try {
             Socket().use { socket ->
                 socket.connect(InetSocketAddress(ip, port), timeoutMs)
                 true
             }
-        } catch (e: Exception) { false }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun grabBanner(ip: String, port: Int): String {
